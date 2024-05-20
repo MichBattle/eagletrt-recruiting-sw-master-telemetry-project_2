@@ -3,6 +3,12 @@
 #define MESSAGE_H
 
 #include <sstream>
+#include <string>
+#include <cstdint>
+#include <vector>
+#include <sstream>
+#include <iomanip>
+
 
 struct Message {
     uint16_t id;
@@ -11,8 +17,7 @@ struct Message {
 
 class MessageParser {
 public:
-
-private:
+    static bool parse(const std::string& raw_message, Message& message);
 };
 
 #endif // MESSAGE_H
