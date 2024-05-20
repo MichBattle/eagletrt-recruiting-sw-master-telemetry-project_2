@@ -9,7 +9,6 @@
 #include <sstream>
 #include <iomanip>
 
-
 struct Message {
     uint16_t id;
     std::vector<uint8_t> payload;
