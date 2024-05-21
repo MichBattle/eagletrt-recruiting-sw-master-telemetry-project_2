@@ -2,6 +2,12 @@
 #ifndef FSM_H
 #define FSM_H
 
+#include <string>
+#include <fstream>
+#include <unordered_map>
+#include <vector>
+#include <cstdint>
+
 enum class State {
     Idle,
     Run

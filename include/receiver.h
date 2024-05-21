@@ -3,6 +3,9 @@
 #define RECEIVER_H
 
 #include <string>
+#include <queue>
+#include <mutex>
+#include <condition_variable>
 
 class Receiver {
 public:

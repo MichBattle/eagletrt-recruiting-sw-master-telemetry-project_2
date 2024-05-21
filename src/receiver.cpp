@@ -1,10 +1,8 @@
 // receiver.cpp
-#include "../include/receiver.h"
-#include "../fake_receiver.h" // Assuming this is provided for CAN reception
+#include "./../include/receiver.h"
+#include "../fake_receiver.h"
 #include <thread>
-#include <queue>
-#include <mutex>
-#include <condition_variable>
+#include <cstring>
 
 Receiver::Receiver() {
     // Constructor
@@ -13,12 +11,15 @@ Receiver::Receiver() {
 void Receiver::start() {
     std::thread([this]() {
         while (true) {
-            std::string message = can_receive();
-            {
-                std::lock_guard<std::mutex> lock(queue_mutex);
-                message_queue.push(message);
+            char message_buffer[MAX_CAN_MESSAGE_SIZE] = {0};
+            int bytes_received = can_receive(message_buffer);
+            if (bytes_received > 0) { // Ensure message is received successfully
+                {
+                    std::lock_guard<std::mutex> lock(queue_mutex);
+                    message_queue.push(std::string(message_buffer, bytes_received));
+                }
+                queue_cv.notify_one();
             }
-            queue_cv.notify_one();
         }
     }).detach();
 }

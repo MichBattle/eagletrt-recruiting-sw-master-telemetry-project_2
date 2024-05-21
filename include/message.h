@@ -2,12 +2,9 @@
 #ifndef MESSAGE_H
 #define MESSAGE_H
 
-#include <sstream>
 #include <string>
 #include <cstdint>
 #include <vector>
-#include <sstream>
-#include <iomanip>
 
 struct Message {
     uint16_t id;
