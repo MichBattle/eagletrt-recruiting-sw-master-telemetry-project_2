@@ -1,14 +1,18 @@
-#include <stdio.h>
+// main.cpp
+#include "fsm.h"
+#include "receiver.h"
 #include <iostream>
-using namespace std;
 
-extern "C"{
-    #include "fake_receiver.h"
-}
+int main() {
+    FSM fsm;
+    Receiver receiver;
 
-int main(void){
+    receiver.start();
 
-    cout << "Welcome to Project 2" << endl;
+    while (true) {
+        std::string message = receiver.get_message();
+        fsm.handle_message(message);
+    }
 
     return 0;
 }
