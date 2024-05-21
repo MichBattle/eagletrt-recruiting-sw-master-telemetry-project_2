@@ -1,11 +1,10 @@
-// main.cpp
 #include "./include/fsm.h"
 #include "./include/receiver.h"
-#include "fake_receiver.h" // Include this for open_can and close_can
+#include "fake_receiver.h" // Include per open_can e close_can
 #include <iostream>
-#include <filesystem> // Include for filesystem operations
+#include <filesystem> // Include per le operazioni sul filesystem
 
-namespace fs = std::filesystem; // Alias for easier use
+namespace fs = std::filesystem; // Alias per un uso più semplice
 
 int main(int argc, char* argv[]) {
     if (argc != 2) {
@@ -19,7 +18,7 @@ int main(int argc, char* argv[]) {
         return 1;
     }
 
-    // Create the directory if it doesn't exist
+    // Crea la directory "generatedFiles" se non esiste
     fs::create_directories("generatedFiles");
 
     FSM fsm;
@@ -27,6 +26,7 @@ int main(int argc, char* argv[]) {
 
     receiver.start();
 
+    // Ciclo principale per ricevere e gestire i messaggi
     while (true) {
         std::string message = receiver.get_message();
         fsm.handle_message(message);
