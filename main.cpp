@@ -1,6 +1,6 @@
 // main.cpp
-#include "fsm.h"
-#include "receiver.h"
+#include "./include/fsm.h"
+#include "./include/receiver.h"
 #include <iostream>
 
 int main() {
