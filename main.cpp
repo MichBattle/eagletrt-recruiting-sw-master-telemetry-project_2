@@ -1,3 +1,4 @@
+// main.cpp
 #include "./include/fsm.h"
 #include "./include/receiver.h"
 #include "fake_receiver.h" // Include per open_can e close_can
