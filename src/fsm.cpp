@@ -11,6 +11,29 @@
 FSM::FSM() : current_state(State::Idle), session_start_time(0) {}
 
 void FSM::handle_message(const std::string& raw_message) {
+    Message message;
+    if (!MessageParser::parse(raw_message, message)) {
+        return;
+    }
+
+    uint64_t current_time = std::chrono::duration_cast<std::chrono::milliseconds>(
+        std::chrono::system_clock::now().time_since_epoch()).count();
+
+    switch (current_state) {
+        case State::Idle:
+            if (raw_message == "0A0#6601" || raw_message == "0A0#FF01") {
+                transition_to(State::Run);
+            }
+            break;
+        case State::Run:
+            if (raw_message == "0A0#66FF") {
+                transition_to(State::Idle);
+            } else {
+                log_message(raw_message);
+                message_timestamps[message.id].push_back(current_time);
+            }
+            break;
+    }
 }
 
 void FSM::transition_to(State new_state) {
