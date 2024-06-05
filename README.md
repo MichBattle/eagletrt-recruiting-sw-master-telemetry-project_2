@@ -6,49 +6,19 @@ This project implements a CAN Bus message processor in C++. It includes function
 
 ## Components
 
-### 1. FSM (Finite State Machine)
+### 1. FSM State Management:
+   - Transitions between `Idle` and `Run` states based on specific CAN messages.
+   - Logs received messages with timestamps.
+   - Computes and writes statistics to a CSV file upon transitioning to `Idle`.
 
-Manages the system states (`Idle` and `Run`).
+### 2. Message Parsing:
+   - Parses incoming CAN messages into IDs and payloads.
+   - Validates payload lengths and converts hexadecimal strings to integers and byte representations.
 
-- **Functions**:
-  - `FSM()`
-  - `void handle_message(const std::string& message)`
-  - `State get_state() const`
-
-- **Private Methods**:
-  - `void transition_to(State new_state)`
-  - `void log_message(const std::string& message)`
-  - `void compute_statistics()`
-
-- **Private Members**:
-  - `State current_state`
-  - `std::ofstream log_file`
-  - `std::unordered_map<uint16_t, std::vector<uint64_t>> message_timestamps`
-  - `uint64_t session_start_time`
-
-### 2. Message Parsing
-
-Parses incoming CAN messages into IDs and payloads.
-
-- **Functions**:
-  - `static bool parse(const std::string& raw_message, Message& message)`
-
-- **Structure**:
-  - `struct Message`
-
-### 3. Thread Receiver
-
-Manages the reception of CAN messages in a separate thread.
-
-- **Functions**:
-  - `Receiver()`
-  - `void start()`
-  - `std::string get_message()`
-
-- **Private Members**:
-  - `std::queue<std::string> message_queue`
-  - `std::mutex queue_mutex`
-  - `std::condition_variable queue_cv`
+### 3. Receiver Thread Management:
+   - Manages the reception of CAN messages in a separate thread.
+   - Starts and stops the receiver thread cleanly.
+   - Ensures thread-safe message queue handling.
 
 ### 4. Main Application
 
@@ -81,9 +51,6 @@ Controls the overall flow of the application.
     ./bin/project_2 path/to/can_data_file
     ```
 
-2. **Simulate CAN messages**:
-    - Open `candump.log` file and append CAN messages to simulate.
-
 ## File Descriptions
 
 - `include/fsm.h`: Header for state management.
@@ -95,6 +62,7 @@ Controls the overall flow of the application.
 - `main.cpp`: Main application logic.
 
 ## Files structure
+
 ```
 ├── .vscode
 │   └── settings.json
