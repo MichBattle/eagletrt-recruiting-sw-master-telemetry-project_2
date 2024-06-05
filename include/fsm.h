@@ -1,4 +1,3 @@
-// fsm.h
 #ifndef FSM_H
 #define FSM_H
 
@@ -8,28 +7,29 @@
 #include <vector>
 #include <cstdint>
 
-// Definizione degli stati della macchina
+// Definition of the states of the machine
 enum class State {
-    Idle, // Stato idle
-    Run   // Stato di esecuzione
+    Idle, 
+    Run 
 };
 
-// Definizione della classe FSM (Finite State Machine)
+// Definition of the FSM (Finite State Machine) class
 class FSM {
 public:
     FSM();
-    void handle_message(const std::string& message); // Gestisce il messaggio ricevuto
-    State get_state() const; // Restituisce lo stato attuale della macchina a stati
+    void handle_message(const std::string& message); // Handles the received message
+    State get_state() const; // Returns the current state of the state machine
 
 private:
-    void transition_to(State new_state); // Transizione verso un nuovo stato
-    void log_message(const std::string& message); // Registra il messaggio nel file di log
-    void compute_statistics(); // Calcola le statistiche dei messaggi ricevuti
+    void transition_to(State new_state); // Transition to a new state
+    void log_message(const std::string& message); // Logs the message to the log file
+    void compute_statistics(); // Computes statistics of the received messages
 
-    State current_state; // Stato attuale della macchina
-    std::ofstream log_file; // File di log per i messaggi
-    std::unordered_map<uint16_t, std::vector<uint64_t>> message_timestamps; // Timestamp dei messaggi per ID
-    uint64_t session_start_time; // Timestamp di inizio sessione
+    State current_state; // Current state of the machine
+    std::ofstream log_file; // Log file for the messages
+    std::unordered_map<uint16_t, std::vector<uint64_t>> message_timestamps; // Message timestamps by ID
+    uint64_t session_start_time; // Session start timestamp
+    uint64_t get_current_time_ms() const; // Returns the current timestamp in milliseconds
 };
 
 #endif // FSM_H

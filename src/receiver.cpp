@@ -1,45 +1,57 @@
-// receiver.cpp
 #include "./../include/receiver.h"
 #include "../fake_receiver.h"
 #include <thread>
 #include <cstring>
 
-// Costruttore della classe Receiver
-Receiver::Receiver() {
-    // Costruttore vuoto
+Receiver::Receiver() : running(false) {
 }
 
-// Avvia il ricevitore
+Receiver::~Receiver() {
+    stop();
+}
+
+// Start the receiver
 void Receiver::start() {
-    // Crea un thread separato per ricevere i messaggi
-    std::thread([this]() {
-        while (true) {
-            // Buffer per il messaggio ricevuto
+    running = true;
+    // Create a separate thread to receive messages
+    receiver_thread = std::thread([this]() {
+        while (running) {
+            // Buffer for received message
             char message_buffer[MAX_CAN_MESSAGE_SIZE] = {0};
-            // Riceve un messaggio e ottiene il numero di byte ricevuti
+            // Receive a message and get the number of bytes received
             int bytes_received = can_receive(message_buffer);
-            if (bytes_received > 0) { // Assicura che il messaggio sia ricevuto correttamente
+            if (bytes_received > 0) { // Ensure message is received correctly
                 {
-                    // Blocco per proteggere l'accesso alla coda
+                    // Block to protect access to queue
                     std::lock_guard<std::mutex> lock(queue_mutex);
-                    // Aggiunge il messaggio ricevuto alla coda
+                    // Add received message to queue
                     message_queue.push(std::string(message_buffer, bytes_received));
                 }
-                // Notifica un thread in attesa che un nuovo messaggio è disponibile
+                // Notify a waiting thread that a new message is available
                 queue_cv.notify_one();
             }
         }
-    }).detach(); // Stacca il thread
+    });
 }
 
-// Ottiene un messaggio dalla coda
+// Get a message from the queue
 std::string Receiver::get_message() {
     std::unique_lock<std::mutex> lock(queue_mutex);
-    // Attende finché la coda non contiene almeno un messaggio
+    // Wait until the queue contains at least one message
     queue_cv.wait(lock, [this]() { return !message_queue.empty(); });
-    // Ottiene il messaggio dalla coda
+    // Get the message from the queue
     std::string message = message_queue.front();
-    // Rimuove il messaggio dalla coda
+    // Remove the message from the queue
     message_queue.pop();
-    return message; // Ritorna il messaggio
+    return message; 
+}
+
+// Stop the receiver and join the thread
+void Receiver::stop() {
+    if (running) {
+        running = false;
+        if (receiver_thread.joinable()) {
+            receiver_thread.join();
+        }
+    }
 }

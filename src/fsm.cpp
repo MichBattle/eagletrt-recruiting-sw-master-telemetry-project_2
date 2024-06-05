@@ -1,47 +1,46 @@
-// fsm.cpp
 #include "./../include/fsm.h"
 #include "./../include/message.h"
 #include <chrono>
 #include <iomanip>
 #include <iostream>
-#include <filesystem> // Include per le operazioni sul filesystem
+#include <filesystem>
+#include <fstream>
 
-namespace fs = std::filesystem;
+namespace fs = std::filesystem; // Alias for the filesystem namespace
 
-// Costruttore della classe FSM
+// Constructor for FSM class
 FSM::FSM() : current_state(State::Idle), session_start_time(0) {
-    // Crea la directory "generatedFiles" se non esiste
-    // In questa directory verranno inseriti i file che vengono creati in esecuzione
+    // Create "generatedFiles" directory if it doesn't exist
     fs::create_directories("generatedFiles");
 }
 
-// Gestisce il messaggio ricevuto
+// Handle received message
 void FSM::handle_message(const std::string& raw_message) {
     Message message;
 
-    // Tenta di fare il parsing del messaggio iniziale
+    // Attempt to parse the initial message
     if (!MessageParser::parse(raw_message, message)) {
-        return; // Se il parsing fallisce esce dalla funzione
+        return; 
     }
 
-    // Timestamp corrente in millisecondi
-    uint64_t current_time = std::chrono::duration_cast<std::chrono::milliseconds>(
-        std::chrono::system_clock::now().time_since_epoch()).count();
+    // Current timestamp in milliseconds
+    uint64_t current_time = get_current_time_ms();
 
-    // Gestisce la FSM in base allo stato attuale
+    // Handle FSM based on current state
     switch (current_state) {
         case State::Idle:
-            // Cambia da Idle a Run
-            if (raw_message == "0A0#6601" || raw_message == "0A0#FF01") {
+            // Transition from Idle to Run
+            if (message.id == 0x0A0 && (message.payload == std::vector<uint8_t>{0x66, 0x01} || 
+                                        message.payload == std::vector<uint8_t>{0xFF, 0x01})) {
                 transition_to(State::Run);
             }
             break;
         case State::Run:
-            // Cambia da Run a Idle
-            if (raw_message == "0A0#66FF") {
+            // Transition from Run to Idle
+            if (message.id == 0x0A0 && message.payload == std::vector<uint8_t>{0x66, 0xFF}) {
                 transition_to(State::Idle);
             } else {
-                // Registra il messaggio nel file di log e memorizza il timestamp
+                // Log message and store timestamp
                 log_message(raw_message);
                 message_timestamps[message.id].push_back(current_time);
             }
@@ -49,76 +48,78 @@ void FSM::handle_message(const std::string& raw_message) {
     }
 }
 
-// Cambia lo stato
+// Transition to new state
 void FSM::transition_to(State new_state) {
-    // Se sta passando dallo stato Run allo stato Idle
+    // Transition from Run to Idle
     if (current_state == State::Run && new_state == State::Idle) {
-        // Chiude il file di log se è aperto
+        // Close log file if open
         if (log_file.is_open()) {
             log_file.close();
         }
-        // Calcola le statistiche sui messaggi ricevuti
+        // Compute statistics on received messages
         compute_statistics();
     }
 
-    // Aggiorna lo stato corrente
+    // Update current state
     current_state = new_state;
 
-    // Se il nuovo stato è Run, apre un nuovo file di log
+    // Open new log file if transitioning to Run state
     if (current_state == State::Run) {
-        // Ottiene il timestamp corrente in millisecondi
-        session_start_time = std::chrono::duration_cast<std::chrono::milliseconds>(
-            std::chrono::system_clock::now().time_since_epoch()).count();
+        session_start_time = get_current_time_ms();
 
-        // Crea un nome per il file di log basato sul timestamp corrente
+        // Create a filename for the log file based on the current timestamp
         std::string filename = "generatedFiles/session_" + std::to_string(session_start_time) + ".log";
         log_file.open(filename, std::ios::out);
     }
 }
 
-// Registra il messaggio nel file di log
+// Log message to file
 void FSM::log_message(const std::string& message) {
-    // Se il file di log è aperto
+    // If log file is open
     if (log_file.is_open()) {
-        // Ottiene il timestamp corrente in millisecondi
-        uint64_t current_time = std::chrono::duration_cast<std::chrono::milliseconds>(
-            std::chrono::system_clock::now().time_since_epoch()).count();
+        uint64_t current_time = get_current_time_ms();
             
-        // Scrive il timestamp e il messaggio nel file di log
+        // Write timestamp and message to log file
         log_file << current_time << " " << message << std::endl;
     }
 }
 
-// Calcola le statistiche sui messaggi ricevuti
+// Compute statistics on received messages
 void FSM::compute_statistics() {
-    // Apre il file delle statistiche in modalità append
+    // Open statistics file in append mode
     std::ofstream stats_file("generatedFiles/statistics.csv", std::ios::out | std::ios::app);
     stats_file << "ID,number_of_messages,mean_time" << std::endl;
 
-    // Per ogni entry nella mappa dei timestamp dei messaggi
+    // For each entry in the message timestamp map
     for (const auto& entry : message_timestamps) {
-        uint16_t id = entry.first; // ID del messaggio
-        const std::vector<uint64_t>& timestamps = entry.second; // Lista dei timestamp
+        uint16_t id = entry.first; // Message ID
+        const std::vector<uint64_t>& timestamps = entry.second; // List of timestamps
 
         if (timestamps.size() > 1) {
             uint64_t total_time = 0;
             for (size_t i = 1; i < timestamps.size(); ++i) {
-                total_time += timestamps[i] - timestamps[i - 1]; // Somma dei tempi tra i messaggi
+                total_time += timestamps[i] - timestamps[i - 1]; // Sum of times between messages
             }
-            double mean_time = static_cast<double>(total_time) / (timestamps.size() - 1); // Tempo medio tra i messaggi
+            double mean_time = static_cast<double>(total_time) / (timestamps.size() - 1); // Mean time between messages
             stats_file << std::hex << std::setw(3) << std::setfill('0') << id << ","
                        << std::dec << timestamps.size() << "," << mean_time << std::endl;
         } else {
             stats_file << std::hex << std::setw(3) << std::setfill('0') << id << ","
-                       << std::dec << timestamps.size() << ",N/A" << std::endl; // Se c'è solo un messaggio, non calcola il tempo medio
+                       << std::dec << timestamps.size() << ",N/A" << std::endl; // If only one message, no mean time calculation
         }
     }
 
-    // Pulisce la mappa dei timestamp
+    // Clear message timestamp map
     message_timestamps.clear();
 }
 
-// Restituisce lo stato attuale della macchina a stati
+// Return current state of the state machine
 State FSM::get_state() const {
     return current_state;
+}
+
+// Get the current timestamp in milliseconds
+uint64_t FSM::get_current_time_ms() const {
+    return std::chrono::duration_cast<std::chrono::milliseconds>(
+            std::chrono::system_clock::now().time_since_epoch()).count();
 }

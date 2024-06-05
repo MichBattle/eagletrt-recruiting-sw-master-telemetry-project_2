@@ -1,21 +1,20 @@
-// message.h
 #ifndef MESSAGE_H
 #define MESSAGE_H
 
 #include <string>
-#include <cstdint>
 #include <vector>
+#include <cstdint>
 
-// Definizione della struttura Message
+// Message structure
 struct Message {
-    uint16_t id; // ID del messaggio
-    std::vector<uint8_t> payload; // Payload del messaggio
+    uint16_t id; // ID represented as a 16-bit unsigned integer
+    std::vector<uint8_t> payload; // Payload represented as a vector of bytes
 };
 
-// Classe per il parsing dei messaggi
+// Message parser class
 class MessageParser {
 public:
-    static bool parse(const std::string& raw_message, Message& message); // Parsing del messaggio iniziale
+    static bool parse(const std::string& raw_message, Message& message); // Parses the raw message into a Message struct
 };
 
 #endif // MESSAGE_H

@@ -1,38 +1,40 @@
-// main.cpp
 #include "./include/fsm.h"
 #include "./include/receiver.h"
-#include "fake_receiver.h" // Include per open_can e close_can
+#include "fake_receiver.h"
 #include <iostream>
-#include <filesystem> // Include per le operazioni sul filesystem
+#include <filesystem>
 
-namespace fs = std::filesystem; // Alias per un uso più semplice
+namespace fs = std::filesystem; // Alias for the filesystem namespace
 
 int main(int argc, char* argv[]) {
+    // Check if the correct number of command-line arguments is provided
     if (argc != 2) {
         std::cerr << "Usage: " << argv[0] << " <path_to_can_data_file>" << std::endl;
         return 1;
     }
 
-    const char* filepath = argv[1];
+    const char* filepath = argv[1]; // Get the file path from the command-line arguments
     if (open_can(filepath) != 0) {
         std::cerr << "Failed to open CAN data file: " << filepath << std::endl;
         return 1;
     }
 
-    // Crea la directory "generatedFiles" se non esiste
+    // Create "generatedFiles" directory if it doesn't exist
     fs::create_directories("generatedFiles");
 
-    FSM fsm;
-    Receiver receiver;
+    FSM fsm; 
+    Receiver receiver; 
 
-    receiver.start();
+    receiver.start(); // Start the receiver thread
 
-    // Ciclo principale per ricevere e gestire i messaggi
+    // Main loop to receive and handle messages
     while (true) {
-        std::string message = receiver.get_message();
-        fsm.handle_message(message);
+        std::string message = receiver.get_message(); // Get a message from the receiver
+        fsm.handle_message(message); // Handle the message with the FSM
     }
 
-    close_can();
-    return 0;
+    receiver.stop(); // Stop the receiver thread
+    close_can(); // Close the CAN data file
+    return 0; 
 }
+// compile command: g++ -std=c++17 -pthread -o can_fsm src/fsm.cpp src/main.cpp src/message.cpp src/receiver.cpp src/fake_receiver.cpp

@@ -1,33 +1,43 @@
-// message.cpp
 #include "./../include/message.h"
+#include <sstream>
+#include <iomanip>
 
-// Parsing del messaggio iniziale
+// Parsing the initial message
 bool MessageParser::parse(const std::string& raw_message, Message& message) {
-    // Trova la posizione del carattere '#' nel messaggio grezzo
+    // Find the position of the '#' character in the raw message
     size_t hash_pos = raw_message.find('#');
     if (hash_pos == std::string::npos || hash_pos + 1 >= raw_message.size()) {
-        return false; // Ritorna false se non trova '#' o se è l'ultimo carattere
+        return false; // Return false if '#' is not found or it's the last character
     }
 
-    // Estrae la parte del messaggio prima e dopo il carattere '#'
+    // Extract the parts of the message before and after the '#'
     std::string id_str = raw_message.substr(0, hash_pos);
     std::string payload_str = raw_message.substr(hash_pos + 1);
 
-    // Controlla che la lunghezza dell'ID e del payload sia valida
+    // Validate lengths of ID and payload
     if (id_str.length() > 3 || payload_str.length() % 2 != 0 || payload_str.length() > 16) {
-        return false; // Ritorna false se i dati non sono validi
+        return false; // Return false if data is invalid
     }
 
-    // Converte l'ID da stringa esadecimale a intero
-    message.id = std::stoul(id_str, nullptr, 16);
+    // Convert ID from hex string to integer
+    try {
+        message.id = std::stoul(id_str, nullptr, 16);
+    } catch (const std::invalid_argument& e) {
+        return false; // Return false if the conversion fails
+    }
+
     message.payload.clear();
 
-    // Converte il payload da stringa esadecimale a vettore di byte
+    // Convert payload from hex string to byte vector
     for (size_t i = 0; i < payload_str.length(); i += 2) {
         std::string byte_str = payload_str.substr(i, 2);
-        uint8_t byte = static_cast<uint8_t>(std::stoul(byte_str, nullptr, 16));
-        message.payload.push_back(byte);
+        try {
+            uint8_t byte = static_cast<uint8_t>(std::stoul(byte_str, nullptr, 16));
+            message.payload.push_back(byte);
+        } catch (const std::invalid_argument& e) {
+            return false; 
+        }
     }
 
-    return true; // Ritorna true se il parsing ha successo
+    return true; 
 }
